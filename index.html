@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Inteligente con Feedback</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #ffcfe8 0%, #d6bbfb 50%, #b3e5fc 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .app-layout {
+            display: flex;
+            width: 1100px;
+            max-width: 95%;
+            height: 650px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(31, 38, 135, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            overflow: hidden;
+        }
+
+        /* --- BARRA LATERAL IZQUIERDA --- */
+        .sidebar-left {
+            width: 250px;
+            background: rgba(255, 255, 255, 0.4);
+            border-right: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-title {
+            padding: 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #5e5076;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chat-item {
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #4a4a4a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .chat-item:hover, .chat-item.active {
+            background: white;
+            border-color: #b39ddb;
+            color: #5e5076;
+            transform: translateX(3px);
+        }
+
+        /* --- CONTENEDOR CENTRAL: CHAT --- */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .chat-header {
+            background: linear-gradient(90deg, #ffaacc 0%, #b39ddb 50%, #81d4fa 100%);
+            padding: 20px;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 15px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .message.bot {
+            background-color: #f1f3f9;
+            color: #333;
+            align-self: flex-start;
+            border-top-left-radius: 2px;
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, #ffb3d1 0%, #c5a3ff 100%);
+            color: white;
+            align-self: flex-end;
+            border-top-right-radius: 2px;
+            box-shadow: 0 4px 10px rgba(197, 163, 255, 0.2);
+        }
+
+        .chat-input-area {
+            padding: 15px;
+            background: white;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e1bee7;
+            border-radius: 25px;
+            outline: none;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #b39ddb;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #b39ddb 0%, #81d4fa 100%);
+            border: none;
+            color: white;
+            padding: 0 22px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .send-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.03);
+        }
+
+        /* --- BARRA LATERAL DERECHA: REACCIONES --- */
+        .sidebar-right {
+            width: 260px;
+            background: rgba(255, 255, 255, 0.4);
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .feedback-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #5e5076;
+            text-align: center;
+        }
+
+        .rating-options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .like-btn {
+            background: white;
+            border: 2px solid #e1bee7;
+            border-radius: 12px;
+            padding: 10px 15px;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .like-btn:hover {
+            transform: scale(1.05);
+            background: #fff3f8;
+        }
+
+        .like-btn.active-like { background: #ffb3d1; border-color: #ffaacc; }
+        .like-btn.active-dislike { background: #b3e5fc; border-color: #81d4fa; }
+
+        .feedback-reason {
+            width: 100%;
+            height: 100px;
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid #e1bee7;
+            resize: none;
+            font-size: 0.85rem;
+            outline: none;
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .feedback-reason:focus { border-color: #b39ddb; background: white; }
+
+        .submit-feedback-btn {
+            background: linear-gradient(135deg, #ffaacc 0%, #b39ddb 100%);
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .submit-feedback-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    </style>
+</head>
+<body>
+
+    <div class="app-layout">
+        
+        <!-- Izquierda: Historial/Sugeridos -->
+        <aside class="sidebar-left">
+            <div class="sidebar-title">Conversaciones</div>
+            <div class="chat-list">
+                <div class="chat-item active" data-chat="general">✨ Asistente Principal</div>
+                <div class="chat-item" data-chat="tareas">📋 Resumen de Tareas</div>
+                <div class="chat-item" data-chat="diseno">🎨 Ideas de Diseño y Logos</div>
+                <div class="chat-item" data-chat="biologia">🧬 Cuestionario de Biología</div>
+            </div>
+        </aside>
+
+        <!-- Centro: Chat en vivo -->
+        <main class="chat-container">
+            <div class="chat-header" id="chatHeaderTitle">
+                ✨ Asistente Principal
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot">
+                    ¡Hola! Soy tu asistente. ¿En qué te puedo colaborar hoy? 🌸
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" class="chat-input" placeholder="Escribe un mensaje aquí..." autocomplete="off">
+                <button id="sendBtn" class="send-btn">Enviar</button>
+            </div>
+        </main>
+
+        <!-- Derecha: Feedback -->
+        <aside class="sidebar-right">
+            <div class="feedback-title">¿Te gusta este chat?</div>
+            <div class="rating-options">
+                <button class="like-btn" id="btnLike" onclick="rateChat('like')">👍</button>
+                <button class="like-btn" id="btnDislike" onclick="rateChat('dislike')">👎</button>
+            </div>
+
+            <div class="feedback-title" style="font-size: 0.9rem; margin-top: 5px;">¿Por qué?</div>
+            <textarea id="feedbackText" class="feedback-reason" placeholder="Cuéntanos qué te pareció el diseño o las respuestas..."></textarea>
+            
+            <button class="submit-feedback-btn" onclick="sendFeedback()">Enviar Opinión</button>
+        </aside>
+
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatHeaderTitle = document.getElementById('chatHeaderTitle');
+        
+        let currentChatContext = 'general';
+        let userRating = null;
+
+        // Agregar mensaje a la interfaz
+        function appendMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+            messageDiv.innerText = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // --- MOTOR DE RESPUESTAS DEL BOT ---
+        function botResponse(userText) {
+            // Añadir un pequeño efecto de delay simulando procesamiento
+            setTimeout(() => {
+                let reply = "Interesante pregunta. Cuéntame un poco más para ayudarte mejor. ✨";
+                const text = userText.toLowerCase();
+
+                // 1. Respuestas globales / generales
+                if (text.includes('hola') || text.includes('buenos dias') || text.includes('buenas tardes')) {
+                    reply = "¡Hola! Qué alegría saludarte. ¿Qué ideas tenemos para hoy? 😊";
+                } else if (text.includes('gracias') || text.includes('excelente') || text.includes('buenisimo')) {
+                    reply = "¡Con muchísimo gusto! Me alegra que te sirva. 💕";
+                } else if (text.includes('adios') || text.includes('chao') || text.includes('gracias por la ayuda')) {
+                    reply = "¡Nos vemos! Éxitos en tus proyectos. 🌸";
+                }
+                
+                // 2. Respuestas basadas en el contexto del chat seleccionado de la izquierda
+                else if (currentChatContext === 'tareas') {
+                    if (text.includes('resumen') || text.includes('tarea') || text.includes('leer')) {
+                        reply = "¡Claro! Pásame el texto largo o el tema y te armo un súper resumen bien breve, ordenado con viñetas para que estudies rápido. 📋";
+                    } else {
+                        reply = "Puedo ayudarte a organizar tus deberes o resumir cualquier materia. ¿Qué tema revisamos? 📚";
+                    }
+                } 
+                else if (currentChatContext === 'diseno') {
+                    if (text.includes('logo') || text.includes('marca') || text.includes('idea')) {
+                        reply = "¡Me encanta el diseño! Para un logo elegante, usar tipografías estilo Serif (como Times New Roman) combinadas con tonos burdeos, cobre o pasteles queda súper estético y profesional. ¿De qué es tu marca? 🎨";
+                    } else if (text.includes('color') || text.includes('degradado')) {
+                        reply = "Los degradados (*gradients*) pastel como este (rosa, lila, celeste) están súper de moda para interfaces limpias y juveniles. ✨";
+                    } else {
+                        reply = "Podemos planear paletas de colores, logos, o el diseño visual de una app. Cuéntame qué tienes en mente. 🖌️";
+                    }
+                } 
+                else if (currentChatContext === 'biologia') {
+                    if (text.includes('cuestionario') || text.includes('bioelementos') || text.includes('celula')) {
+                        reply = "¡Excelente materia! Recuerda que los bioelementos primarios son el CHONPS (Carbono, Hidrógeno, Oxígeno, Nitrógeno, Fósforo y Azufre). ¿Tienes alguna pregunta específica del cuestionario? 🧬";
+                    } else {
+                        reply = "Estoy listo para repasar biología, bioelementos o energía celular. ¡Pregúntame lo que necesites para tu examen! 🧪";
+                    }
+                }
+
+                appendMessage(reply, 'bot');
+            }, 800);
+        }
+
+        // Enviar mensaje del usuario
+        function sendMessage() {
+            const messageText = chatInput.value.trim();
+            if (messageText === '') return;
+
+            appendMessage(messageText, 'user');
+            chatInput.value = '';
+            botResponse(messageText);
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // --- SISTEMA DE CAMBIO DE CHAT (IZQUIERDA) ---
+        document.querySelectorAll('.chat-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Actualizar contexto y título de la cabecera
+                currentChatContext = this.getAttribute('data-chat');
+                chatHeaderTitle.innerText = this.innerText;
+
+                // Limpiar mensajes viejos y dar bienvenida contextualizada
+                chatMessages.innerHTML = '';
+                
+                let welcomeMsg = "¡Hola! ¿En qué te colaboro en esta sección? ✨";
+                if (currentChatContext === 'tareas') welcomeMsg = "Organizador de Tareas activo. Pásame tus textos para hacerlos resúmenes breves. 📋";
+                if (currentChatContext === 'diseno') welcomeMsg = "Estudio de Diseño abierto. ¡Hablemos de logos, marcas, paletas de colores y estética visual! 🎨";
+                if (currentChatContext === 'biologia') welcomeMsg = "Tutor de Biología listo. Repasemos bioelementos, cuestionarios y ciencias. 🧬";
+
+                appendMessage(welcomeMsg, 'bot');
+            });
+        });
+
+        // --- SISTEMA DE FEEDBACK (DERECHA) ---
+        function rateChat(type) {
+            const btnLike = document.getElementById('btnLike');
+            const btnDislike = document.getElementById('btnDislike');
+
+            btnLike.classList.remove('active-like');
+            btnDislike.classList.remove('active-dislike');
+
+            if (type === 'like') {
+                btnLike.classList.add('active-like');
+                userRating = 'Me gusta';
+            } else {
+                btnDislike.classList.add('active-dislike');
+                userRating = 'No me gusta';
+            }
+        }
+
+        function sendFeedback() {
+            const reason = document.getElementById('feedbackText').value.trim();
+            
+            if (!userRating) {
+                alert('Por favor, selecciona primero si te gustó o no el chat (👍 o 👎).');
+                return;
+            }
+            if (reason === '') {
+                alert('Por favor, escribe brevemente la razón de tu opinión.');
+                return;
+            }
+
+            alert(`¡Gracias por tu feedback!\n\nResultado: ${userRating}\nMotivo: "${reason}"`);
+            
+            document.getElementById('feedbackText').value = '';
+            document.getElementById('btnLike').classList.remove('active-like');
+            document.getElementById('btnDislike').classList.remove('active-dislike');
+            userRating = null;
+			async function botResponse(userText) {
+    // 1. Mostramos un mensaje temporal de "Pensando..."
+    appendMessage("Escribiendo...", 'bot');
+
+    try {
+        // 2. Enviamos la pregunta a nuestro servidor seguro
+        const response = await fetch('https://mi-servidor-seguro.com/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mensaje: userText })
+        });
+
+        const data = await response.json();
+        
+        // 3. Borramos el "Escribiendo..." y ponemos la respuesta real de la IA
+        quitarUltimoMensaje(); 
+        appendMessage(data.respuestaIA, 'bot');
+
+    } catch (error) {
+        appendMessage("Lo siento, hubo un error al conectar con la IA.", 'bot');
+    }
+}
+        }
+    </script>
+</body>
+</html>
